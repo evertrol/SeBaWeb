@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SeBa WebAssembly Runner</title>
+  <script src='https://cdn.plot.ly/plotly-3.3.0.min.js'></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 20px;
+    }
+
+    label {
+      display: inline-block;
+      width: 80px;
+    }
+
+    #stdout-container {
+      margin-top: 10px;
+    }
+
+    #stdout {
+      font-family: monospace;
+      white-space: pre-wrap;
+      border: 1px solid #ccc;
+      padding: 8px;
+      overflow-y: auto;
+      line-height: 1.2em;
+      min-height: calc(1.2em * 20); /* approx. 20 lines visible */
+      max-height: 400px;
+      background: #f9f9f9;
+    }
+
+    #table-container {
+      margin-top: 20px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      max-width: 600px;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 4px 8px;
+      text-align: left;
+      font-family: monospace;
+    }
+
+    th {
+      background: #eee;
+    }
+
+    #run-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    #status {
+      margin-left: 10px;
+      font-size: 0.9em;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <h1>SeBa WebAssembly Runner</h1>
+
+  <div>
+    <label for="m1">Massa eerste ster</label>
+    <input id="m1" type="text" value="2">
+  </div>
+  <div>
+    <label for="m2">Massa tweede ster</label>
+    <input id="m2" type="text" value="1">
+  </div>
+  <div>
+    <label for="e">Eccentriciteit</label>
+    <input id="e" type="text" value="0.2">
+  </div>
+  <div>
+    <label for="a">Baanscheiding</label>
+    <input id="a" type="text" value="200">
+    <p>Afstand tussen sterren in eenheden van zonneradius</p>
+  </div>
+  <div>
+    <label for="T">Tijd</label>
+    <input id="T" type="text" value="13500">
+    <p>Tijd in miljoenen jaren (megajaar)</p>
+  </div>
+  <div>
+    <label for="z">Metalliciteit</label>
+    <input id="z" type="text" value="0.001">
+    <p>Metaalgehalte van de sterren</p>
+  </div>
+  <div style="margin-top: 10px;">
+    <button id="run-button" disabled>Run</button>
+    <span id="status">Loading WebAssembly...</span>
+  </div>
+
+  <div id="stdout-container">
+    <h2>Log</h2>
+    <div id="stdout"></div>
+  </div>
+
+  <div id="graph"></div>
+  <div id="table-container">
+    <h2>Output data</h2>
+    <table id="output-table">
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Stellar mass</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Rows will be inserted here -->
+      </tbody>
+    </table>
+  </div>
+
+  <!--
+    Define Module BEFORE loading SeBa.js so Emscripten uses these hooks.
+    SeBa.js must be in the same directory as this HTML.
+  -->
+  <script>
+    const stdoutElem = document.getElementById('stdout');
+    const tableBody = document.querySelector('#output-table tbody');
+    const runButton = document.getElementById('run-button');
+    const statusElem = document.getElementById('status');
+
+    // Collect output lines in memory as well
+    const stdoutLines = [];
+    const stderrLines = [];
+
+    // Helper to append a line to the stdout display
+    function appendOutput(text, isError) {
+      // const prefix = isError ? '[stderr] ' : '';
+      // const line = prefix + text;
+      stdoutLines.push(text);
+      stdoutElem.textContent = stdoutLines.join('\n');
+      // Scroll to bottom
+      stdoutElem.scrollTop = stdoutElem.scrollHeight;
+    }
+
+    // Emscripten Module configuration object
+    var Module = {
+      print: function(text) {          // stdout
+        appendOutput(text, false);
+      },
+      printErr: function(text) {       // stderr
+        appendOutput(text, true);
+      },
+      onRuntimeInitialized: function() {
+        // Enable the Run button once WASM is ready
+        statusElem.textContent = 'Ready.';
+        runButton.disabled = false;
+      }
+    };
+
+    // Load the generated JS glue code (SeBa.js)
+  </script>
+  <script src="SeBa.js"></script>
+
+  <script>
+    // Run button handler
+    runButton.addEventListener('click', function() {
+      if (!Module || !Module.callMain) {
+        alert('Module not initialized yet.');
+        return;
+      }
+
+      // Clear previous output
+      stdoutLines.length = 0;
+      stdoutElem.textContent = '';
+      tableBody.innerHTML = '';
+      statusElem.textContent = 'Running...';
+      runButton.disabled = true;
+
+	const args = [
+	    '-M',
+	    document.getElementById('m1').value.trim(),
+	    '-m',
+	    document.getElementById('m2').value.trim(),
+	    '-e',
+	    document.getElementById('e').value.trim(),
+	    '-a',
+	    document.getElementById('a').value.trim(),
+	    '-T',
+	    document.getElementById('T').value.trim(),
+	    '-z',
+	    document.getElementById('z').value.trim()
+	];
+
+
+      // Optional: remove previous SeBa.data if it exists
+      try {
+        Module.FS.unlink('SeBa.data');
+      } catch (e) {
+        // Ignore if file did not exist
+      }
+
+      // Call main(argc, argv) via callMain
+      try {
+        Module.callMain(args);
+      } catch (e) {
+        appendOutput('Exception: ' + e, true);
+      }
+
+      // After main returns, try to read output.txt
+      try {
+          const text = Module.FS.readFile('SeBa.data', { encoding: 'utf8' });
+	  data = readData(text);
+        populateTableFromOutput(text);
+      } catch (e) {
+        appendOutput('Could not read SeBa.data: ' + e, true);
+      }
+
+	plotResults(data);
+
+      statusElem.textContent = 'Done.';
+      runButton.disabled = false;
+    });
+
+    function readData(fileContent) {
+	var data = Array.from({length: 18}, _ => []);
+
+	const lines = fileContent.split(/\r?\n/);
+	for (const line of lines) {
+	    const trimmed = line.trim();
+	    if (!trimmed) {
+		continue;
+	    }
+	    const cols = trimmed.split(/\s+/);
+	    for (const i in cols) {
+		data[i].push(parseFloat(cols[i]));
+	    }
+
+	}
+	return data;
+    }
+
+    // Parse output.txt lines, extract columns 1, 2, and 5 into the table
+    function populateTableFromOutput(fileContent) {
+      const lines = fileContent.split(/\r?\n/);
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;                 // skip empty lines
+        if (trimmed.startsWith('#')) continue;  // skip comment lines (optional)
+
+        // Split on whitespace (spaces/tabs)
+        const cols = trimmed.split(/\s+/);
+        if (cols.length < 5) continue;          // need at least 5 columns
+
+        const c1 = cols[4];
+        const c2 = cols[9];
+
+        const tr = document.createElement('tr');
+
+        const td1 = document.createElement('td');
+        td1.textContent = c1;
+        tr.appendChild(td1);
+
+        const td2 = document.createElement('td');
+        td2.textContent = c2;
+        tr.appendChild(td2);
+
+        tableBody.appendChild(tr);
+      }
+    }
+
+    function plotResults(data) {
+	var trace1 = {
+	    x: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+	    y: [8, 7, 6, 5, 4, 3, 2, 1, 0],
+	    type: 'scatter'
+	};
+
+	var trace2 = {
+	    x: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+	    y: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+	    type: 'scatter'
+	};
+
+	var plottingData = {
+	    x: data[3],
+	    y: data[9],
+	    type: 'scatter'
+	};
+
+	var layout = {
+	    xaxis: {
+		type: 'log',
+		autorange: true
+	    },
+	    yaxis: {
+		//type: 'log',
+		autorange: true
+	    }
+	};
+	console.log(plottingData);
+	Plotly.newPlot('graph', [plottingData], layout);
+    }
+  </script>
+</body>
+</html>
