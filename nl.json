@@ -1,0 +1,22 @@
+{
+    "seba-main-title": "SeBa online",
+    "lang-toggle": "English",
+    "mass1-name": "Massa ster 1",
+    "mass2-name": "Massa ster 2",
+    "ecc-name": "Eccentriciteit",
+    "sep-name": "Afstand",
+    "time-name": "Tijds interval",
+    "metal-name": "Metalliciteit",
+
+    "mass1-tooltip": "Massa van de primaire ster; dit moet groter of gelijk zijn aan die van de secondaire ster.";
+    "mass2-tooltip": "Massa van de secondaire ster; dit moet kleiner of gelijk zijn aan die van de primaire ster.";
+    "ecc-tooltip": "Eccentriciteit van de elliptische baan. 0 is a cirkel, 0.99 is bijna een rechte lijn.",
+    "sep-tooltip": "Afstand tussen de twee sterren, in eenheden van de straal van de zon.",
+
+    "time-tooltip": "Tijdsinterval van de simulatie, in eenheden van megajaren (miljoenen jaren).",
+    "metal-tooltip": "Metalliticiteit is de fractie van atomen met atoomnummers groter dan dat van helium, vergeleken met de totale stermassa (die voornamelijk bestaat uit waterstof en helium).",
+    
+    "program-log": "Programma log"
+
+    
+}

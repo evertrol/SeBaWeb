@@ -1,0 +1,19 @@
+{
+    "seba-main-title": "SeBa online",
+    "lang-toggle": "Nederlands",
+    "mass1-name": "Mass star 1",
+    "mass2-name": "Mass star 2",
+    "ecc-name": "Eccentricity",
+    "sep-name": "Separation",
+    "time-name": "Time span",
+    "metal-name": "Metallicity",
+
+    "mass1-tooltip": "Mass of the primary star; this should be larger than or equal to the secondary star.",
+    "mass2-tooltip": "Mass of the secondary star; this should be smaller than or equal to the orimary star.",
+    "ecc-tooltip": "Eccentricity of the elliptical orbit: 0 is completely circular, 0.99 is nearly a straight line.",
+    "sep-tooltip": "Separation between the two stars, in Solar radii.",
+    "time-tooltip": "Time span of simulation in units of mega-years (= million years)",
+    "metal-tooltip": "Metalliticity is the fraction of atoms with atom numbers higher than Helium compared to the total star mass (which is mainly Hydrogen and Helium)",
+    
+    "program-log": "Program log"
+}
